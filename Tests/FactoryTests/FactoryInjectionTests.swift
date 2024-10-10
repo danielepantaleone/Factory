@@ -32,6 +32,16 @@ class Services5 {
     init() {}
 }
 
+class Services6 {
+    @DynamicInjected(\.myServiceType) var service
+    init() {}
+}
+
+class Services7 {
+    @DynamicInjected(\.cachedService) var service
+    init() {}
+}
+
 class ServicesP {
     @LazyInjected(\.servicesC) var service
     let name = "Parent"
@@ -55,6 +65,8 @@ extension Container {
     fileprivate var services1: Factory<Services1> { self { Services1() } }
     fileprivate var services2: Factory<Services2> { self { Services2() } }
     fileprivate var services3: Factory<Services3> { self { Services3() } }
+    fileprivate var services6: Factory<Services6> { self { Services6() } }
+    fileprivate var services7: Factory<Services7> { self { Services7() } }
     fileprivate var servicesP: Factory<ServicesP> { self { ServicesP() }.shared }
     fileprivate var servicesC: Factory<ServicesC> { self { ServicesC() }.shared }
 }
@@ -232,6 +244,34 @@ final class FactoryInjectionTests: XCTestCase {
         service.$service.resolve()
 
         XCTAssertNil(service.service)
+    }
+    
+    func testDynamicInjection() throws {
+        let service1 = Container.shared.services6()
+        let service2 = Container.shared.services6()
+        let id1 = service1.service.id
+        let id2 = service2.service.id
+        XCTAssertNotEqual(id1, id2)
+    }
+    
+    func testDynamicInjectionShared() throws {
+        let service1 = Container.shared.services7()
+        let service2 = Container.shared.services7()
+        let id1 = service1.service.id
+        let id2 = service2.service.id
+        XCTAssertEqual(id1, id2)
+    }
+    
+    func testDynamicInjectionReset() throws {
+        let service1 = Container.shared.services7()
+        let service2 = Container.shared.services7()
+        let id1 = service1.service.id
+        let id2 = service2.service.id
+        XCTAssertEqual(id1, id2)
+        service2.$service.reset(.scope)
+        let id3 = service2.service.id // trigger new resolution of shared dependency
+        XCTAssertNotEqual(id1, id3)
+        XCTAssertNotEqual(id2, id3)
     }
 
     #if canImport(SwiftUI)
